@@ -26,6 +26,6 @@ print(direct_agent_response)
 print(
     "\nKnowledge Source Explanation:\n"
     "The DirectPromptAgent relied solely on the general world knowledge "
-    "pre-trained into the gpt-3.5-turbo model parameters, without any external "
+    "pre-trained into the gpt-4.1-mini model parameters, without any external "
     "context, system prompt framing, or knowledge retrieval augmentation."
 )

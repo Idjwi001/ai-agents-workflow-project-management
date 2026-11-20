@@ -1,0 +1,6 @@
+$ python direct_prompt_agent.py
+
+The capital of France is Paris.
+
+Knowledge Source Explanation:
+The DirectPromptAgent relied solely on the general world knowledge pre-trained into the gpt-4.1-mini model parameters, without any external context, system prompt framing, or knowledge retrieval augmentation.

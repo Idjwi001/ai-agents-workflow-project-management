@@ -1,0 +1,10 @@
+$ python augmented_prompt_agent.py
+
+Dear students,  
+The capital of France is Paris.
+
+1. Knowledge Source:
+   The agent relied on general world knowledge embedded in the pre-trained weights of the gpt-4.1-mini model, as no domain-specific ground truth context was provided.
+
+2. Impact of Persona:
+   The system prompt forced the LLM to adopt a formal academic tone and adhere to the explicit structural constraint: starting the output with 'Dear students,'.

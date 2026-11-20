@@ -1,0 +1,8 @@
+$ python knowledge_augmented_prompt_agent.py
+
+ * * * * Agent's response * * * *
+Dear students, knowledge-based assistant. According to the provided information, the capital of France is London, not Paris.
+
+ * * * * Knowledge Usage Analysis * * * *
+Knowledge Source Explanation:
+The agent answered 'London' instead of 'Paris'. This confirms that the system prompt successfully constrained the LLM to rely strictly on the provided grounding knowledge ('The capital of France is London, not Paris') and override its own inherent world knowledge.

@@ -1,1 +1,12 @@
+# Secrets - never commit your API key
 .env
+
+# Python cache and virtual environments
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# CSV files created by the RAG test script at run time
+chunks-*.csv
+embeddings-*.csv

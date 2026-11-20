@@ -40,7 +40,7 @@ action_planner = ActionPlanningAgent(
     openai_api_key=openai_api_key, knowledge=knowledge
 )
 
-prompt = "One morning I /workspace/cd14525-agentic-workflows-classroom/project/starter/phase_2wanted to have scrambled eggs"
+prompt = "One morning I wanted to have scrambled eggs"
 
 # TODO: 4 - Print the agent's response to the following prompt: "One morning I wanted to have scrambled eggs"
 extracted_steps = action_planner.extract_steps_from_prompt(prompt)

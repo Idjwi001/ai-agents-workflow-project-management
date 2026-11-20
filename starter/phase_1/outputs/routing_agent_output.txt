@@ -1,0 +1,38 @@
+$ python routing_agent.py
+
+
+ * * * * * Routing Prompt: 'Tell me about the history of Rome, Texas' * * * * *
+[Router] texas agent: similarity = 0.386
+[Router] europe agent: similarity = 0.165
+[Router] math agent: similarity = 0.003
+[Router] Best agent: texas agent (score=0.386)
+Response:
+Rome, Texas, is a small unincorporated community located in Fannin County in the northeastern part of the state. Its history dates back to the 19th century when settlers were moving into the area. The community was established primarily as an agricultural settlement, with farming and ranching as the main economic activities.
+
+Rome served as a local hub for the surrounding rural area, featuring a post office, schools, churches, and small businesses that supported the farming community. Over time, as transportation and economic patterns changed, Rome remained a quiet, rural community without significant urban development.
+
+While Rome, Texas, does not have a widely documented or prominent historical profile compared to larger Texas cities, it reflects the typical development pattern of many small Texas rural communities founded during the state's expansion in the 1800s. Its history is closely tied to the agricultural heritage of Fannin County and the broader northeastern Texas region.
+
+ * * * * * Routing Prompt: 'Tell me about the history of Rome, Italy' * * * * *
+[Router] texas agent: similarity = 0.144
+[Router] europe agent: similarity = 0.288
+[Router] math agent: similarity = 0.032
+[Router] Best agent: europe agent (score=0.288)
+Response:
+Rome, Italy, has a rich and extensive history that spans over two and a half millennia. Founded traditionally in 753 BCE, Rome began as a small settlement on the Tiber River. It grew from a monarchy to a republic in 509 BCE, establishing a complex system of governance with elected officials and a Senate.
+
+During the Roman Republic, Rome expanded its territory through military conquest and alliances, eventually dominating the Italian peninsula and much of the Mediterranean region. This period saw significant developments in law, politics, and engineering.
+
+In 27 BCE, Rome transitioned from a republic to an empire under Augustus, the first Roman emperor. The Roman Empire became one of the most powerful and influential civilizations in history, known for its vast territorial holdings, architectural achievements like the Colosseum and aqueducts, and contributions to law, language, and culture.
+
+The empire eventually split into Eastern and Western halves, with Rome as the capital of the Western Roman Empire. The Western Empire declined and fell in 476 CE, leading to the Middle Ages, during which Rome remained an important religious center as the seat of the Roman Catholic Church.
+
+In the Renaissance, Rome experienced a cultural revival, becoming a hub for art, architecture, and scholarship. Today, Rome is the capital of Italy and a major cultural and historical center, reflecting its long and varied past.
+
+ * * * * * Routing Prompt: 'One story takes 2 days, and there are 20 stories' * * * * *
+[Router] texas agent: similarity = 0.059
+[Router] europe agent: similarity = 0.083
+[Router] math agent: similarity = 0.130
+[Router] Best agent: math agent (score=0.130)
+Response:
+Total time = 2 days/story × 20 stories = 40 days

@@ -1,7 +1,7 @@
 # TODO: 1 - Import the KnowledgeAugmentedPromptAgent class from workflow_agents
 import os
 from dotenv import load_dotenv
-from workflow_agents.base_agents import KnowledgeAugmentedPromptAgent, RoutingAgent
+from workflow_agents.base_agents import KnowledgeAugmentedPromptAgent
 
 # Load environment variables from the .env file
 load_dotenv()

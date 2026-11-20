@@ -25,11 +25,16 @@ print(augmented_agent_response)
 
 # TODO: 4 - Add a comment explaining:
 # - What knowledge the agent likely used to answer the prompt.
+#   -> The agent had no extra knowledge given to it, so it used the general
+#      knowledge the gpt-4.1-mini model learned during training (Paris).
 # - How the system prompt specifying the persona affected the agent's response.
+#   -> The persona changed the style, not the facts: the answer is written like a
+#      professor talking to a class and starts with "Dear students,".
+print()
 print(
     "1. Knowledge Source:\n"
     "   The agent relied on general world knowledge embedded in the pre-trained weights "
-    "of the gpt-3.5-turbo model, as no domain-specific ground truth context was provided.\n"
+    "of the gpt-4.1-mini model, as no domain-specific ground truth context was provided.\n"
 )
 
 print(

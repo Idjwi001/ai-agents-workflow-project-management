@@ -1,4 +1,21 @@
 # agentic_workflow.py
+"""
+Agentic workflow for technical project management (pilot: Email Router).
+
+How it works, in plain words:
+  1. The Action Planning Agent splits the TPM's request into steps.
+  2. The Routing Agent sends each step to the right "team":
+       - Product Manager      -> writes user stories
+       - Program Manager      -> groups stories into product features
+       - Development Engineer -> writes engineering tasks
+  3. Each team = a Knowledge Augmented Prompt Agent (does the work) paired with an
+     Evaluation Agent (checks the format and asks for fixes until it is right).
+  4. At the end, all results are printed as one project plan.
+"""
+
+# ---------------------------------------------------------------------------
+# 1. Setup
+# ---------------------------------------------------------------------------
 
 # TODO: 1 - Import the following agents: ActionPlanningAgent, KnowledgeAugmentedPromptAgent, EvaluationAgent, RoutingAgent from the workflow_agents.base_agents module
 import os
@@ -12,21 +29,24 @@ from workflow_agents.base_agents import (
 )
 
 # TODO: 2 - Load the OpenAI key into a variable called openai_api_key
-load_dotenv(find_dotenv())
+load_dotenv(find_dotenv(usecwd=True))
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# load the product spec
 # TODO: 3 - Load the product spec document Product-Spec-Email-Router.txt into a variable called product_spec
-product_spec_path = "Product-Spec-Email-Router.txt"
-if not os.path.exists(product_spec_path):
-    product_spec_path = os.path.join(
-        os.path.dirname(__file__), "Product-Spec-Email-Router.txt"
-    )
+product_spec_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Product-Spec-Email-Router.txt")
+with open(product_spec_path, "r", encoding="utf-8") as spec_file:
+    product_spec = spec_file.read()
 
-with open(product_spec_path, "r", encoding="utf-8") as f:
-    product_spec = f.read()
-    
-# Instantiate all the agents
+# Where each team's validated output is collected, so we can print one full plan at the end
+project_plan = {
+    "user_stories": [],
+    "product_features": [],
+    "engineering_tasks": [],
+}
+
+# ---------------------------------------------------------------------------
+# 2. Instantiate all the agents
+# ---------------------------------------------------------------------------
 
 # Action Planning Agent
 knowledge_action_planning = (
@@ -41,16 +61,18 @@ knowledge_action_planning = (
 )
 # TODO: 4 - Instantiate an action_planning_agent using the 'knowledge_action_planning'
 action_planning_agent = ActionPlanningAgent(
-    openai_api_key=openai_api_key, knowledge=knowledge_action_planning
+    openai_api_key=openai_api_key,
+    knowledge=knowledge_action_planning,
 )
 
-# Product Manager - Knowledge Augmented Prompt Agent
+# --- Product Manager team ---------------------------------------------------
 persona_product_manager = "You are a Product Manager, you are responsible for defining the user stories for a product."
 knowledge_product_manager = (
     "Stories are defined by writing sentences with a persona, an action, and a desired outcome. "
     "The sentences always start with: As a "
     "Write several stories for the product spec below, where the personas are the different users of the product. "
-    + product_spec # TODO: 5 - Complete this knowledge string by appending the product_spec loaded in TODO 3
+    # TODO: 5 - Complete this knowledge string by appending the product_spec loaded in TODO 3
+    + product_spec
 )
 # TODO: 6 - Instantiate a product_manager_knowledge_agent using 'persona_product_manager' and the completed 'knowledge_product_manager'
 product_manager_knowledge_agent = KnowledgeAugmentedPromptAgent(
@@ -59,91 +81,68 @@ product_manager_knowledge_agent = KnowledgeAugmentedPromptAgent(
     knowledge=knowledge_product_manager,
 )
 
-# Product Manager - Evaluation Agent
-# TODO: 7 - Define the persona and evaluation criteria for a Product Manager evaluation agent and instantiate it as product_manager_evaluation_agent. This agent will evaluate the product_manager_knowledge_agent.
-# The evaluation_criteria should specify the expected structure for user stories (e.g., "As a [type of user], I want [an action or feature] so that [benefit/value].").
+# TODO: 7 - Define the persona and evaluation criteria for a Product Manager evaluation agent and instantiate it
 persona_product_manager_eval = "You are an evaluation agent that checks the answers of other worker agents"
 evaluation_criteria_product_manager = (
     "The answer should be stories that follow the following structure: "
     "As a [type of user], I want [an action or feature] so that [benefit/value]."
 )
-
 product_manager_evaluation_agent = EvaluationAgent(
     openai_api_key=openai_api_key,
     persona=persona_product_manager_eval,
     evaluation_criteria=evaluation_criteria_product_manager,
-    worker_agent=product_manager_knowledge_agent,
+    worker_agent=product_manager_knowledge_agent,  # the agent to evaluate
     max_interactions=10,
 )
 
-# Program Manager - Knowledge Augmented Prompt Agent
+# --- Program Manager team ---------------------------------------------------
 persona_program_manager = "You are a Program Manager, you are responsible for defining the features for a product."
 knowledge_program_manager = "Features of a product are defined by organizing similar user stories into cohesive groups."
+# Each step is routed on its own, so the Program Manager would not otherwise know
+# which product it is planning. Adding the spec keeps its features about the Email Router.
+knowledge_program_manager += "\nThis is the product spec the features are for:\n" + product_spec
+
 # Instantiate a program_manager_knowledge_agent using 'persona_program_manager' and 'knowledge_program_manager'
-# (This is a necessary step before TODO 8. Students should add the instantiation code here.)
 program_manager_knowledge_agent = KnowledgeAugmentedPromptAgent(
     openai_api_key=openai_api_key,
     persona=persona_program_manager,
     knowledge=knowledge_program_manager,
 )
 
-# Program Manager - Evaluation Agent
-persona_program_manager_eval = "You are an evaluation agent that checks the answers of other worker agents."
-
 # TODO: 8 - Instantiate a program_manager_evaluation_agent using 'persona_program_manager_eval' and the evaluation criteria below.
-#                      "The answer should be product features that follow the following structure: " \
-#                      "Feature Name: A clear, concise title that identifies the capability\n" \
-#                      "Description: A brief explanation of what the feature does and its purpose\n" \
-#                      "Key Functionality: The specific capabilities or actions the feature provides\n" \
-#                      "User Benefit: How this feature creates value for the user"
-# For the 'agent_to_evaluate' parameter, refer to the provided solution code's pattern.
-
-# Development Engineer - Knowledge Augmented Prompt Agent
-persona_dev_engineer = "You are a Development Engineer, you are responsible for defining the development tasks for a product."
-knowledge_dev_engineer = "Development tasks are defined by identifying what needs to be built to implement each user story."
-# Instantiate a development_engineer_knowledge_agent using 'persona_dev_engineer' and 'knowledge_dev_engineer'
-# (This is a necessary step before TODO 9. Students should add the instantiation code here.)
+persona_program_manager_eval = "You are an evaluation agent that checks the answers of other worker agents."
 evaluation_criteria_program_manager = (
-    "The answer should be product features that follow the following structure: \n"
+    "The answer should be product features that follow the following structure: "
     "Feature Name: A clear, concise title that identifies the capability\n"
     "Description: A brief explanation of what the feature does and its purpose\n"
     "Key Functionality: The specific capabilities or actions the feature provides\n"
     "User Benefit: How this feature creates value for the user"
 )
-
 program_manager_evaluation_agent = EvaluationAgent(
     openai_api_key=openai_api_key,
     persona=persona_program_manager_eval,
     evaluation_criteria=evaluation_criteria_program_manager,
-    worker_agent=program_manager_knowledge_agent,
+    worker_agent=program_manager_knowledge_agent,  # the agent to evaluate
     max_interactions=10,
 )
 
-# Development Engineer - Evaluation Agent
+# --- Development Engineer team ----------------------------------------------
 persona_dev_engineer = "You are a Development Engineer, you are responsible for defining the development tasks for a product."
-knowledge_dev_engineer = (
-    "Development tasks are defined by identifying what needs to be built to implement each user story."
-)
+knowledge_dev_engineer = "Development tasks are defined by identifying what needs to be built to implement each user story."
+# Same reason as above: give the engineer the spec so the tasks are about the Email Router.
+knowledge_dev_engineer += "\nThis is the product spec the tasks are for:\n" + product_spec
 
+# Instantiate a development_engineer_knowledge_agent using 'persona_dev_engineer' and 'knowledge_dev_engineer'
 development_engineer_knowledge_agent = KnowledgeAugmentedPromptAgent(
     openai_api_key=openai_api_key,
     persona=persona_dev_engineer,
     knowledge=knowledge_dev_engineer,
 )
 
-persona_dev_engineer_eval = "You are an evaluation agent that checks the answers of other worker agents."
 # TODO: 9 - Instantiate a development_engineer_evaluation_agent using 'persona_dev_engineer_eval' and the evaluation criteria below.
-#                      "The answer should be tasks following this exact structure: " \
-#                      "Task ID: A unique identifier for tracking purposes\n" \
-#                      "Task Title: Brief description of the specific development work\n" \
-#                      "Related User Story: Reference to the parent user story\n" \
-#                      "Description: Detailed explanation of the technical work required\n" \
-#                      "Acceptance Criteria: Specific requirements that must be met for completion\n" \
-#                      "Estimated Effort: Time or complexity estimation\n" \
-#                      "Dependencies: Any tasks that must be completed first"
-# For the 'agent_to_evaluate' parameter, refer to the provided solution code's pattern.
+persona_dev_engineer_eval = "You are an evaluation agent that checks the answers of other worker agents."
 evaluation_criteria_dev_engineer = (
-    "The answer should be tasks following this exact structure: \n"
+    "The answer should be tasks following this exact structure: "
     "Task ID: A unique identifier for tracking purposes\n"
     "Task Title: Brief description of the specific development work\n"
     "Related User Story: Reference to the parent user story\n"
@@ -152,91 +151,79 @@ evaluation_criteria_dev_engineer = (
     "Estimated Effort: Time or complexity estimation\n"
     "Dependencies: Any tasks that must be completed first"
 )
-
 development_engineer_evaluation_agent = EvaluationAgent(
     openai_api_key=openai_api_key,
     persona=persona_dev_engineer_eval,
     evaluation_criteria=evaluation_criteria_dev_engineer,
-    worker_agent=development_engineer_knowledge_agent,
+    worker_agent=development_engineer_knowledge_agent,  # the agent to evaluate
     max_interactions=10,
 )
 
-# Job function persona support functions
-# TODO: 11 - Define the support functions for the routes of the routing agent (e.g., product_manager_support_function, program_manager_support_function, development_engineer_support_function).
-# Each support function should:
-#   1. Take the input query (e.g., a step from the action plan).
-#   2. Get a response from the respective Knowledge Augmented Prompt Agent.
-#   3. Have the response evaluated by the corresponding Evaluation Agent.
-#   4. Return the final validated response.
+# ---------------------------------------------------------------------------
+# 3. Support functions (one per team)
+# ---------------------------------------------------------------------------
+# TODO: 11 - Each support function takes a step from the action plan, passes the step
+# itself to its Evaluation Agent (which calls its own worker agent internally),
+# and returns the 'final_response' from the evaluation result.
+
 def product_manager_support_function(query: str) -> str:
-    response = product_manager_knowledge_agent.respond(query)
-    eval_result = product_manager_evaluation_agent.evaluate(response)
-    return eval_result.get("final_response", response)
+    """Product Manager team: write user stories for the step and return the validated result."""
+    result = product_manager_evaluation_agent.evaluate(query)
+    project_plan["user_stories"].append(result["final_response"])
+    return result["final_response"]
 
 
 def program_manager_support_function(query: str) -> str:
-    response = program_manager_knowledge_agent.respond(query)
-    eval_result = program_manager_evaluation_agent.evaluate(response)
-    return eval_result.get("final_response", response)
+    """Program Manager team: define product features for the step and return the validated result."""
+    result = program_manager_evaluation_agent.evaluate(query)
+    project_plan["product_features"].append(result["final_response"])
+    return result["final_response"]
 
 
 def development_engineer_support_function(query: str) -> str:
-    response = development_engineer_knowledge_agent.respond(query)
-    eval_result = development_engineer_evaluation_agent.evaluate(response)
-    return eval_result.get("final_response", response)
+    """Development Engineer team: define engineering tasks for the step and return the validated result."""
+    result = development_engineer_evaluation_agent.evaluate(query)
+    project_plan["engineering_tasks"].append(result["final_response"])
+    return result["final_response"]
 
 
-# Routing Agent
-# TODO: 10 - Instantiate a routing_agent. You will need to define a list of agent dictionaries (routes) for Product Manager, Program Manager, and Development Engineer. Each dictionary should contain 'name', 'description', and 'func' (linking to a support function). Assign this list to the routing_agent's 'agents' attribute.
+# ---------------------------------------------------------------------------
+# 4. Routing Agent
+# ---------------------------------------------------------------------------
+# TODO: 10 - Instantiate a routing_agent and give it one route per team.
 routing_agent = RoutingAgent(openai_api_key, [])
 
 agents_routes = [
     {
         "name": "Product Manager",
-        "description": "Responsible for defining product personas and user stories only. Does not define features or tasks. Does not group stories.",
+        "description": (
+            "Responsible for defining product personas and user stories only. "
+            "Does not define features or tasks. Does not group stories."
+        ),
         "func": lambda x: product_manager_support_function(x),
     },
     {
         "name": "Program Manager",
-        "description": "Responsible for defining features and grouping user stories into cohesive feature sets.",
+        "description": (
+            "Responsible for defining product features by grouping related user stories. "
+            "Does not write user stories or engineering tasks."
+        ),
         "func": lambda x: program_manager_support_function(x),
     },
     {
         "name": "Development Engineer",
-        "description": "Responsible for defining engineering development tasks, task IDs, technical specs, and acceptance criteria.",
+        "description": (
+            "Responsible for defining the engineering development tasks needed to build "
+            "each user story. Does not write user stories or define features."
+        ),
         "func": lambda x: development_engineer_support_function(x),
     },
 ]
-
 routing_agent.agents = agents_routes
 
-# Job function persona support functions
-# TODO: 11 - Define the support functions for the routes of the routing agent (e.g., product_manager_support_function, program_manager_support_function, development_engineer_support_function).
-# Each support function should:
-#   1. Take the input query (e.g., a step from the action plan).
-#   2. Get a response from the respective Knowledge Augmented Prompt Agent.
-#   3. Have the response evaluated by the corresponding Evaluation Agent.
-#   4. Return the final validated response.
-def product_manager_support_function(query: str) -> str:
-    response = product_manager_knowledge_agent.respond(query)
-    eval_result = product_manager_evaluation_agent.evaluate(response)
-    return eval_result.get("final_response", response)
-
-
-def program_manager_support_function(query: str) -> str:
-    response = program_manager_knowledge_agent.respond(query)
-    eval_result = program_manager_evaluation_agent.evaluate(response)
-    return eval_result.get("final_response", response)
-
-
-def development_engineer_support_function(query: str) -> str:
-    response = development_engineer_knowledge_agent.respond(query)
-    eval_result = development_engineer_evaluation_agent.evaluate(response)
-    return eval_result.get("final_response", response)
-
-
-# Run the workflow
-
+# ---------------------------------------------------------------------------
+# 5. Run the workflow
+# ---------------------------------------------------------------------------
 print("\n*** Workflow execution started ***\n")
 # Workflow Prompt
 # ****
@@ -246,33 +233,41 @@ print(f"Task to complete in this workflow, workflow prompt = {workflow_prompt}")
 
 print("\nDefining workflow steps from the workflow prompt")
 # TODO: 12 - Implement the workflow.
-#   1. Use the 'action_planning_agent' to extract steps from the 'workflow_prompt'.
-#   2. Initialize an empty list to store 'completed_steps'.
-#   3. Loop through the extracted workflow steps:
-#      a. For each step, use the 'routing_agent' to route the step to the appropriate support function.
-#      b. Append the result to 'completed_steps'.
-#      c. Print information about the step being executed and its result.
-#   4. After the loop, print the final output of the workflow (the last completed step).
-# 1. Extract steps from workflow_prompt
 workflow_steps = action_planning_agent.extract_steps_from_prompt(workflow_prompt)
+print("Workflow steps:")
+for number, step in enumerate(workflow_steps, start=1):
+    print(f"  {number}. {step}")
 
 completed_steps = []
 
-# 2. Iterate through extracted workflow steps
-for index, step in enumerate(workflow_steps, start=1):
-    print(f"\n--- Executing Step {index}: {step} ---")
+for number, step in enumerate(workflow_steps, start=1):
+    print(f"\n========== Executing Step {number}: {step} ==========")
 
-    # Pass step to routing agent to invoke appropriate support function
+    # The router picks the right team and returns that team's validated answer
     step_result = routing_agent.route(step)
-
-    # Contextual chaining: append previous output context if needed for downstream steps
     completed_steps.append(step_result)
 
-    print(f"\n[Result for Step {index}]:\n{step_result}\n")
+    print(f"\n[Result of Step {number}]:\n{step_result}\n")
 
-# 3. Print final output of the workflow (last item in completed_steps)
-print("\n=== FINAL AGENTIC WORKFLOW OUTPUT ===")
-if completed_steps:
-    print(completed_steps[-1])
-else:
-    print("No workflow steps were executed.")
+# ---------------------------------------------------------------------------
+# 6. Print one consolidated project plan
+# ---------------------------------------------------------------------------
+def print_section(title: str, results: list) -> None:
+    """Print one labelled section of the project plan."""
+    print("\n" + "=" * 70)
+    print(title)
+    print("=" * 70)
+    if results:
+        print("\n\n".join(results))
+    else:
+        print("(No output was produced for this section.)")
+
+
+print("\n\n" + "#" * 70)
+print("FINAL PROJECT PLAN - EMAIL ROUTER")
+print("#" * 70)
+print(f"Workflow steps completed: {len(completed_steps)} of {len(workflow_steps)}")
+print_section("SECTION 1: USER STORIES (Product Manager)", project_plan["user_stories"])
+print_section("SECTION 2: PRODUCT FEATURES (Program Manager)", project_plan["product_features"])
+print_section("SECTION 3: ENGINEERING TASKS (Development Engineer)", project_plan["engineering_tasks"])
+print("\n*** Workflow execution finished ***")
